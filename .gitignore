@@ -4,3 +4,7 @@ videos/
 
 # Orijinal monolitik dokuman (docs/ altinda bolunmus hali mevcut)
 BOOTCAMP_DOKUMAN_DUZELTILMIS.md
+
+# Python cache
+__pycache__/
+*.pyc
