@@ -1,0 +1,2340 @@
+Docker Bootcamp Bitirme Projesi
+TechFlow Mikroservis Platformu (Hands-On Learning Edition)
+Felsefe: Bu proje bir sınav değildir. Her modül, bir önceki modülün üzerine inşa edilir ve öğrenci yaparak öğrenir. Hata yapmak öğrenme sürecinin parçasıdır.
+
+📋 Projenin Hikayesi
+TechFlow şirketi monolitik uygulamasını mikroservislere geçiriyor. Siz bu projenin DevOps mühendisi olarak görevlendirildiniz. Şirket hedefleri net: containerization, hızlı deployment, izole çalışma ortamları ve production-ready altyapı.
+Proje boyunca gerçek dünya container senaryolarıyla karşılaşacak ve bunları çözeceksiniz.
+
+🎯 Öğrenme Hedefleri
+Bu projeyi tamamladığınızda şunları yapabiliyor olacaksınız:
+    • Docker kurulumu ve temel komutları
+    • Container lifecycle yönetimi
+    • Custom Docker image oluşturma ve Dockerfile yazma
+    • Multi-container uygulamaları Docker Compose ile yönetme
+    • Volume ve network yapılandırması
+    • Registry kullanımı ve image paylaşımı
+    • Production best practices
+    • Container troubleshooting ve debugging
+
+🛠️ Gereksinimler
+Sistem:
+    • OS: Ubuntu 22.04/24.04, Windows 10/11, veya macOS
+    • CPU: 2 core (önerilen 4 core)
+    • RAM: Minimum 4 GB (önerilen 8 GB)
+    • Disk: 20 GB boş alan
+    • Network: İnternet erişimi
+Önerilen Ortam:
+    • VirtualBox/VMware üzerinde Ubuntu VM
+    • Windows: Docker Desktop for Windows
+    • macOS: Docker Desktop for Mac
+
+📚 Modül Yapısı
+Her modül şu bölümleri içerir:
+    • 🎓 Ne Öğreneceksiniz: Modülün hedefi
+    • 📖 Teori (Hızlı Geçiş): Kavramların ne olduğu
+    • 🔧 Uygulama (Adım Adım): Yapılacaklar
+    • ✅ Kontrol Noktası: Doğru yolda olup olmadığınızı test edin
+    • ⚠️ Sık Yapılan Hatalar: Dikkat edilmesi gerekenler
+    • 💡 Anlama Testi: Bu modülü gerçekten anladınız mı?
+
+
+🐳 Modül 1: Docker Kurulumu ve Temel Yapı
+🎓 Ne Öğreneceksiniz
+    • Docker nedir ve neden kullanılır?
+    • Docker Engine mimarisi (daemon, CLI, containerd)
+    • Docker kurulumu (Ubuntu/Windows/Mac)
+    • İlk container'ınızı çalıştırma
+    • Docker'ın doğru çalıştığını doğrulama
+
+📖 Teori (Hızlı Geçiş)
+Docker Nedir? Container teknolojisi kullanan bir platform. Uygulamaları ve bağımlılıklarını izole edilmiş ortamlarda çalıştırır.
+VM vs Container:
+Virtual Machine:
+┌─────────────────────┐
+│   App A   │  App B  │
+├───────────┴─────────┤
+│   OS A    │  OS B   │
+├─────────────────────┤
+│    Hypervisor       │
+├─────────────────────┤
+│    Host OS          │
+└─────────────────────┘
+
+Container:
+┌─────────────────────┐
+│   App A   │  App B  │
+├───────────┴─────────┤
+│  Docker Engine      │
+├─────────────────────┤
+│    Host OS          │
+└─────────────────────┘
+Avantajlar:
+    • Hafif (MB'lar vs GB'lar)
+    • Hızlı başlatma (saniyeler vs dakikalar)
+    • Tutarlı çalışma ortamı ("works on my machine" sorunu yok)
+    • Resource verimli
+Docker Mimarisi:
+Docker CLI (docker command)
+    ↓
+Docker Daemon (dockerd)
+    ↓
+containerd
+    ↓
+runc (container runtime)
+
+🔧 Uygulama (Adım Adım)
+1.1 Docker Kurulumu (Ubuntu)
+ADIM 1: Eski Versiyonları Temizle
+# Eski Docker versiyonlarını kaldır
+sudo apt remove docker docker-engine docker.io containerd runc 2>/dev/null
+
+# Sistem güncellemesi
+sudo apt update
+sudo apt upgrade -y
+
+ADIM 2: Gerekli Paketleri Kur
+# Temel araçlar
+sudo apt install -y \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release
+
+ADIM 3: Docker GPG Key Ekle
+# Dizin oluştur
+sudo mkdir -p /etc/apt/keyrings
+
+# Docker resmi GPG key (--yes flag ile üzerine yazma izni)
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
+    sudo gpg --dearmor --yes -o /etc/apt/keyrings/docker.gpg
+
+# Okuma izni ver
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+ADIM 4: Docker Repository Ekle
+# Repository ayarla
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+  https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+ADIM 5: Docker Engine Kur
+# Paket listesini güncelle
+sudo apt update
+
+# Docker Engine, CLI ve containerd kur
+sudo apt install -y \
+    docker-ce \
+    docker-ce-cli \
+    containerd.io \
+    docker-buildx-plugin \
+    docker-compose-plugin
+
+# Docker versiyonunu kontrol et
+docker --version
+# Beklenen: Docker version 24.0.x veya üstü
+
+ADIM 6: Docker Servisini Başlat ve Aktif Et
+# Docker servisini başlat
+sudo systemctl start docker
+
+# Boot'ta otomatik başlasın
+sudo systemctl enable docker
+
+# Servis durumunu kontrol et
+sudo systemctl status docker
+
+# Beklenen çıktı:
+# ● docker.service - Docker Application Container Engine
+#      Active: active (running)
+
+ADIM 7: Kullanıcıyı Docker Grubuna Ekle
+# Mevcut kullanıcıyı docker grubuna ekle
+sudo usermod -aG docker $USER
+
+# Grup değişikliğini aktif et (veya logout/login yap)
+newgrp docker
+
+# Test: sudo olmadan docker komutu
+docker ps
+# Hata vermiyorsa başarılı!
+💡 Ne Yaptık? docker grubu Docker daemon'a socket üzerinden erişim izni verir. Artık sudo kullanmadan Docker komutları çalıştırabiliriz.
+
+1.2 Docker Kurulum Testi
+Test 1: Hello World Container
+# Docker'ın ilk test container'ı
+docker run hello-world
+
+# Beklenen çıktı:
+# Hello from Docker!
+# This message shows that your installation appears to be working correctly.
+Ne Oldu?
+    1. Docker CLI komutu daemon'a gönderildi
+    2. Daemon local'de hello-world image'ını aradı (bulamadı)
+    3. Docker Hub'dan otomatik indirdi (pull)
+    4. Image'dan container oluşturdu
+    5. Container çalıştı, mesajı gösterdi ve durdu
+
+Test 2: Sistem Bilgisi
+# Docker sistem bilgisi
+docker info
+
+# Önemli bilgiler:
+# - Server Version
+# - Storage Driver
+# - Cgroup Driver
+# - Containers (running/stopped)
+# - Images
+
+Test 3: İlk İnteraktif Container
+# Ubuntu container'ı interaktif modda çalıştır
+docker run -it ubuntu bash
+
+# Container içindesiniz! Prompt: root@<container-id>:/#
+
+# Container içinde komutlar çalıştırın:
+cat /etc/os-release
+ls /
+whoami
+
+# Çıkmak için:
+exit
+🤔 Ne Farkettiniz?
+    • Container içinde tamamen izole bir Ubuntu sistemi
+    • Saniyeler içinde başladı
+    • Host sistemden bağımsız
+
+✅ Kontrol Noktası 1
+# Proje dizini oluştur
+mkdir -p ~/TechFlow_Docker_Project/01-Installation
+cd ~/TechFlow_Docker_Project/01-Installation
+
+# Kurulum kanıtı
+{
+  echo "=== Docker Installation Verification ==="
+  echo ""
+  echo "Docker Version:"
+  docker --version
+  echo ""
+  echo "Docker Info (ilk 20 satır):"
+  docker info 2>/dev/null | head -20
+  echo ""
+  echo "Images:"
+  docker images
+  echo ""
+  echo "Containers:"
+  docker ps -a
+  echo ""
+  echo "User Groups:"
+  groups
+} > docker_install_proof.txt
+
+cat docker_install_proof.txt
+Beklenen Sonuçlar:
+    • ✅ Docker version 24.0+ görünüyor
+    • ✅ Docker info çalışıyor
+    • ✅ hello-world ve ubuntu image'ları var
+    • ✅ Durmuş container'lar listede
+
+⚠️ Sık Yapılan Hatalar
+Hata                              Sebep                        Çözüm
+Cannot connect to Docker daemon   Docker servisi çalışmıyor    sudo systemctl start docker
+permission denied                 User docker grubunda değil   sudo usermod -aG docker $USER → Logout/login
+docker: command not found         PATH'de değil                which docker kontrol et, yeniden kur
+Image pull hatası                 Network/proxy sorunu         docker pull manuel dene, proxy ayarla
+
+💡 Anlama Testi
+    1. Docker daemon ve Docker CLI arasındaki fark nedir?
+       Cevap: CLI kullanıcı komutlarını alır, daemon arka planda çalışır ve container'ları yönetir. API ile haberleşirler.
+    2. docker run hello-world komutunu tekrar çalıştırırsanız ne olur?
+       Cevap: Image zaten local'de olduğu için pull yapmaz, direkt çalıştırır. Çok daha hızlıdır.
+    3. Container durduğunda ne olur? Veri kaybolur mu?
+       Cevap: Container durdurulur ama silinmez. docker ps -a ile görülür. Veri container içinde kalır ama volume kullanmazsan container silindiğinde kaybolur.
+    4. Neden sudo usermod -aG docker $USER yapıyoruz?
+       Cevap: Docker daemon'ı root olarak çalışır. Docker grubuna ekleyerek sudo olmadan erişim sağlıyoruz.
+
+
+🚀 Modül 2: Temel Docker Komutları
+🎓 Ne Öğreneceksiniz
+    • Container yaşam döngüsü (run, stop, start, rm)
+    • Image yönetimi (pull, push, rmi)
+    • Container inceleme ve debug (logs, exec, inspect)
+    • Port mapping ve detached mode
+    • Container isimlendirme ve tag'leme
+
+📖 Teori (Hızlı Geçiş)
+Container Lifecycle:
+docker run    → Create + Start
+docker create → Sadece oluştur
+docker start  → Durdurulmuş container'ı başlat
+docker stop   → Graceful shutdown (SIGTERM)
+docker kill   → Zorla durdur (SIGKILL)
+docker restart→ Stop + Start
+docker rm     → Container'ı sil
+Image Lifecycle:
+docker pull   → Registry'den indir
+docker build  → Dockerfile'dan oluştur
+docker push   → Registry'e yükle
+docker rmi    → Image'ı sil
+docker tag    → Image'a tag ekle
+Container States:
+Created → Running → Paused → Stopped → Removed
+          ↓
+       Exited
+
+🔧 Uygulama (Adım Adım)
+2.1 Container Çalıştırma (docker run)
+Basit Çalıştırma:
+# Nginx web sunucusu çalıştır
+docker run nginx
+
+# Ne oldu?
+# - nginx image pull edildi
+# - Container oluşturuldu ve başlatıldı
+# - Ön planda çalışıyor (terminal kilitli)
+# - Ctrl+C ile durdur
+❌ Sorun: Terminal kilitli, başka komut çalıştıramıyoruz!
+
+Detached Mode (Arka Plan):
+# -d flag: detached (arka planda)
+docker run -d nginx
+
+# Çıktı: Container ID (12 karakter)
+# Örnek: a1b2c3d4e5f6
+
+# Container çalışıyor mu?
+docker ps
+
+# Çıktı:
+# CONTAINER ID   IMAGE    COMMAND                  STATUS        PORTS
+# a1b2c3d4e5f6   nginx    "/docker-entrypoint.…"   Up 10 sec     80/tcp
+
+Port Mapping:
+# Problem: Nginx 80 portunda ama host'tan erişemiyoruz
+
+# -p flag: port mapping (host:container)
+docker run -d -p 8080:80 nginx
+
+# Test et
+curl http://localhost:8080
+
+# Çıktı: Nginx welcome page HTML!
+💡 Port Mapping Mantığı:
+localhost:8080  →  Docker Engine  →  Container:80
+   (Host)              (Bridge)         (Nginx)
+
+İsimlendirme:
+# --name flag: container'a isim ver
+docker run -d -p 8081:80 --name my-nginx nginx
+
+# Artık ID yerine isim kullanabilirsin
+docker stop my-nginx
+docker start my-nginx
+docker rm my-nginx
+
+2.2 Container Yönetimi
+Container Listeleme:
+# Çalışan container'lar
+docker ps
+
+# Tüm container'lar (durmuş olanlar dahil)
+docker ps -a
+
+# Sadece container ID'leri
+docker ps -q
+
+# Son oluşturulan container
+docker ps -l
+
+Container Durdurma:
+# Graceful stop (10 saniye timeout)
+docker stop my-nginx
+
+# Zorla durdur
+docker kill my-nginx
+
+# Birden fazla container
+docker stop container1 container2 container3
+
+# Tüm çalışan container'ları durdur
+docker stop $(docker ps -q)
+
+Container Silme:
+# Durmuş container sil
+docker rm my-nginx
+
+# Çalışan container'ı zorla sil
+docker rm -f my-nginx
+
+# Tüm durmuş container'ları sil
+docker container prune
+
+# Dikkat: Bu işlem geri alınamaz!
+
+2.3 Container İnceleme ve Debug
+Log Görüntüleme:
+# Container loglarını göster
+docker logs my-nginx
+
+# Canlı log izleme (-f: follow)
+docker logs -f my-nginx
+
+# Son 10 satır
+docker logs --tail 10 my-nginx
+
+# Timestamp ekle
+docker logs -t my-nginx
+
+Container İçine Giriş:
+# Exec: Çalışan container'da komut çalıştır
+docker exec -it my-nginx bash
+
+# Container içindesiniz!
+# nginx konfigürasyonunu görün:
+cat /etc/nginx/nginx.conf
+
+# Process listesi
+ps aux
+
+# Çıkış
+exit
+💡 -it Flags:
+    • -i: Interactive (stdin açık)
+    • -t: TTY (terminal emulation)
+
+Container Detayları:
+# Tüm metadata JSON formatında
+docker inspect my-nginx
+
+# Spesifik bilgi çek (IP adresi)
+docker inspect -f '{{.NetworkSettings.IPAddress}}' my-nginx
+
+# Port mapping
+docker port my-nginx
+
+# Resource kullanımı (real-time)
+docker stats my-nginx
+
+# Çıktı: CPU %, Memory, Network I/O
+
+2.4 Image Yönetimi
+Image İndirme:
+# Docker Hub'dan indir
+docker pull ubuntu
+
+# Spesifik versiyon (tag)
+docker pull ubuntu:20.04
+
+Image Listeleme:
+# Local image'lar
+docker images
+
+# Çıktı:
+# REPOSITORY   TAG       IMAGE ID       CREATED        SIZE
+# nginx        latest    a1b2c3d4e5f6   2 weeks ago    187MB
+# ubuntu       20.04     b2c3d4e5f6a1   1 month ago    72.8MB
+
+# Sadece ID'ler
+docker images -q
+
+# Dangling images (tag yok)
+docker images -f "dangling=true"
+
+Image Silme:
+# Image sil
+docker rmi nginx
+
+# Zorla sil (container varsa)
+docker rmi -f nginx
+
+# Birden fazla
+docker rmi nginx ubuntu alpine
+
+# Kullanılmayan tüm image'ları sil
+docker image prune -a
+
+✅ Kontrol Noktası 2
+# Pratik senaryo: 3 Nginx instance çalıştır
+mkdir -p ~/TechFlow_Docker_Project/02-Commands
+cd ~/TechFlow_Docker_Project/02-Commands
+
+# 1. İlk Nginx (port 8081)
+docker run -d -p 8081:80 --name web1 nginx
+
+# 2. İkinci Nginx (port 8082)
+docker run -d -p 8082:80 --name web2 nginx
+
+# 3. Üçüncü Nginx (port 8083)
+docker run -d -p 8083:80 --name web3 nginx
+
+# Test et
+curl -s http://localhost:8081 | head -5
+curl -s http://localhost:8082 | head -5
+curl -s http://localhost:8083 | head -5
+
+# Container'ları listele
+docker ps
+
+# Log'ları kontrol et
+docker logs web1
+
+# Birini durdur
+docker stop web2
+
+# Tekrar başlat
+docker start web2
+
+# Temizlik
+docker stop web1 web2 web3
+docker rm web1 web2 web3
+
+# Kanıt dosyası
+{
+  echo "=== Basic Commands Practice ==="
+  docker ps -a
+  docker images
+} > commands_proof.txt
+
+⚠️ Sık Yapılan Hatalar
+Hata                              Sebep                        Çözüm
+port is already allocated         Port zaten kullanımda        Farklı port kullan veya çakışan container'ı bul
+No such container                 Container ID/isim yanlış     docker ps -a ile kontrol et
+cannot remove running container   Container çalışıyor          Önce docker stop sonra docker rm
+exec failed: container not running Container durmuş            docker start ile başlat
+Image silinmiyor                  Container kullanıyor         docker ps -a kontrol et, container'ı sil
+
+💡 Anlama Testi
+    1. docker run vs docker start farkı nedir?
+       Cevap: docker run: Yeni container oluşturur ve başlatır. docker start: Var olan durmuş container'ı başlatır.
+    2. Container durduğunda veri kaybolur mu?
+       Cevap: Hayır. Container durmuş ama silinmemiş ise veri container içinde kalır. docker rm ile silindiğinde kaybolur (volume kullanılmamışsa).
+    3. -p 8080:80 ne anlama gelir?
+       Cevap: Host'un 8080 portunu container'ın 80 portuna yönlendir. Dışarıdan 8080'e gelen istekler container'ın 80'ine gider.
+    4. Neden docker exec kullanırız?
+       Cevap: Çalışan container içinde komut çalıştırmak için. Debug, konfigürasyon kontrolü, log inceleme gibi.
+
+🎯 Modül 2 Tamamlandı!
+Şu ana kadar öğrendikleriniz:
+    • ✅ Docker kurulumu
+    • ✅ Container lifecycle
+    • ✅ Port mapping
+    • ✅ Log ve debug
+    • ✅ Image yönetimi
+Sırada ne var? Modül 3'te kendi Docker image'larınızı oluşturacaksınız!
+
+
+🏗️ Modül 3: Docker Image Oluşturma ve Dockerfile
+🎓 Ne Öğreneceksiniz
+    • Dockerfile syntax ve best practices
+    • Multi-stage builds
+    • Layer caching mekanizması
+    • Custom image oluşturma
+    • Image optimize etme teknikleri
+    • .dockerignore kullanımı
+
+📖 Teori (Hızlı Geçiş)
+Dockerfile Nedir? Image oluşturmak için kullanılan text dosyası. Her satır bir "instruction" (komut) içerir.
+Image Layers (Katmanlar):
+┌─────────────────────┐
+│   Python App        │  ← Layer 5 (CMD)
+├─────────────────────┤
+│   requirements.txt  │  ← Layer 4 (COPY)
+├─────────────────────┤
+│   pip install       │  ← Layer 3 (RUN)
+├─────────────────────┤
+│   Python 3.11       │  ← Layer 2 (FROM)
+├─────────────────────┤
+│   Base OS           │  ← Layer 1
+└─────────────────────┘
+Her layer cache'lenir. Değişmeyen layer'lar yeniden build edilmez (hız!).
+Temel Dockerfile Komutları:
+Komut       Açıklama                          Örnek
+FROM        Base image                        FROM ubuntu:22.04
+RUN         Build sırasında komut çalıştır    RUN apt update
+COPY        Dosya kopyala                     COPY app.py /app/
+ADD         COPY + extract (tar, url)         ADD file.tar.gz /app/
+WORKDIR     Çalışma dizini                    WORKDIR /app
+ENV         Environment variable              ENV PORT=8080
+EXPOSE      Port bilgisi (dokümantasyon)      EXPOSE 80
+CMD         Container başlangıç komutu        CMD ["python", "app.py"]
+ENTRYPOINT  Ana process                       ENTRYPOINT ["nginx"]
+
+🔧 Uygulama (Adım Adım)
+3.1 İlk Dockerfile: Basit Web Uygulaması
+Senaryo: Python Flask web uygulaması container'ına alacağız.
+ADIM 1: Proje Dizini Oluştur
+# Proje dizini
+mkdir -p ~/TechFlow_Docker_Project/03-Images/flask-app
+cd ~/TechFlow_Docker_Project/03-Images/flask-app
+
+ADIM 2: Python Flask Uygulaması
+# app.py dosyası oluştur
+cat > app.py << 'EOF'
+from flask import Flask
+import os
+
+app = Flask(__name__)
+
+@app.route('/')
+def hello():
+    return f"""
+    <h1>TechFlow Flask App</h1>
+    <p>Container ID: {os.uname().nodename}</p>
+    <p>Python Version: {os.sys.version}</p>
+    <p>Environment: {os.getenv('ENV', 'production')}</p>
+    """
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
+EOF
+
+ADIM 3: Requirements Dosyası
+# requirements.txt oluştur
+cat > requirements.txt << 'EOF'
+Flask==3.0.0
+Werkzeug==3.0.1
+EOF
+
+ADIM 4: Dockerfile Yaz
+# Dockerfile oluştur
+cat > Dockerfile << 'EOF'
+# Base image: Python 3.11 slim (küçük boyut)
+FROM python:3.11-slim
+
+# Metadata (iyi pratik)
+LABEL maintainer="techflow@example.com"
+LABEL version="1.0"
+LABEL description="TechFlow Flask Web Application"
+
+# Çalışma dizini oluştur
+WORKDIR /app
+
+# Requirements'ı kopyala (layer caching için önce bu)
+COPY requirements.txt .
+
+# Python bağımlılıklarını kur
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Uygulama dosyalarını kopyala
+COPY app.py .
+
+# Port bilgisi (dokümantasyon)
+EXPOSE 5000
+
+# Environment variable
+ENV ENV=production
+
+# Container başlatma komutu
+CMD ["python", "app.py"]
+EOF
+💡 Dockerfile Açıklaması:
+    1. FROM: Python 3.11-slim base image (debian tabanlı, küçük boyut)
+    2. LABEL: Metadata ekle (opsiyonel ama önerilen)
+    3. WORKDIR: /app dizinini oluştur ve oraya geç
+    4. COPY requirements.txt: Sadece requirements'ı kopyala (cache için)
+    5. RUN pip install: Bağımlılıkları kur
+    6. COPY app.py: Uygulama kodunu kopyala
+    7. EXPOSE 5000: Port 5000 kullanılacak (bilgilendirme)
+    8. ENV: Ortam değişkeni tanımla
+    9. CMD: Container başlatınca python app.py çalıştır
+
+ADIM 5: .dockerignore Oluştur
+# .dockerignore oluştur
+cat > .dockerignore << 'EOF'
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+
+# Tests
+tests/
+*.test
+
+# Documentation
+README.md
+docs/
+
+# Logs
+*.log
+EOF
+💡 Neden? Gereksiz dosyalar image'a kopyalanmaz → Küçük boyut, hızlı build.
+
+ADIM 6: Image Build Et
+# Build komutu
+docker build -t techflow-flask:v1 .
+
+# -t: tag (isim:versiyon)
+# . : Dockerfile'ın bulunduğu dizin (current directory)
+
+# Build süreci:
+# [1/6] FROM python:3.11-slim
+# [2/6] WORKDIR /app
+# [3/6] COPY requirements.txt .
+# [4/6] RUN pip install...
+# [5/6] COPY app.py .
+# [6/6] CMD ["python", "app.py"]
+Build çıktısını analiz edin:
+    • Her adım bir layer oluşturur
+    • Layer ID'leri (hash) gösterilir
+    • Cache kullanımı belirtilir
+
+ADIM 7: Image'ı Kontrol Et
+# Image oluşturuldu mu?
+docker images | grep techflow
+
+# Çıktı:
+# techflow-flask   v1    abc123def456   1 minute ago   150MB
+
+# Image detayları
+docker inspect techflow-flask:v1
+
+# Image history (layer'lar)
+docker history techflow-flask:v1
+
+ADIM 8: Container Çalıştır ve Test Et
+# Container başlat
+docker run -d -p 5000:5000 --name flask-app techflow-flask:v1
+
+# Çalışıyor mu?
+docker ps
+
+# Log kontrol
+docker logs flask-app
+
+# Beklenen çıktı:
+#  * Running on all addresses (0.0.0.0)
+#  * Running on http://127.0.0.1:5000
+
+# Test et
+curl http://localhost:5000
+
+# Tarayıcıda: http://localhost:5000
+✅ BAŞARILI: İlk custom image'ınızı oluşturdunuz!
+
+3.2 Dockerfile Best Practices
+1. Layer Caching Optimizasyonu
+❌ Kötü Pratik:
+COPY . .  # Her değişiklikte tüm dosyalar kopyalanır
+RUN pip install -r requirements.txt  # Her seferinde yeniden install
+✅ İyi Pratik:
+COPY requirements.txt .
+RUN pip install -r requirements.txt  # Cache'lenir
+COPY . .  # Sadece kod değişirse bu layer yenilenir
+
+2. RUN Komutlarını Birleştir
+❌ Kötü (3 layer):
+RUN apt update
+RUN apt install -y curl
+RUN apt clean
+✅ İyi (1 layer):
+RUN apt update && \
+    apt install -y curl && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
+
+3. Multi-Stage Build (İleri Seviye)
+# Stage 1: Builder (geliştirme araçları ile)
+FROM python:3.11 AS builder
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --user -r requirements.txt
+
+# Stage 2: Runtime (sadece gerekli dosyalar)
+FROM python:3.11-slim
+WORKDIR /app
+COPY --from=builder /root/.local /root/.local
+COPY app.py .
+ENV PATH=/root/.local/bin:$PATH
+CMD ["python", "app.py"]
+Avantaj:
+    • Builder stage: Büyük image (compiler, dev tools)
+    • Runtime stage: Küçük image (sadece runtime)
+    • Final image çok küçük (50-70% azalma)
+
+3.3 Pratik: Node.js Uygulaması
+# Yeni proje
+mkdir -p ~/TechFlow_Docker_Project/03-Images/node-app
+cd ~/TechFlow_Docker_Project/03-Images/node-app
+
+# package.json
+cat > package.json << 'EOF'
+{
+  "name": "techflow-node",
+  "version": "1.0.0",
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
+EOF
+
+# server.js
+cat > server.js << 'EOF'
+const express = require('express');
+const app = express();
+const port = 3000;
+
+app.get('/', (req, res) => {
+  res.json({
+    message: 'TechFlow Node.js API',
+    version: '1.0.0',
+    container: process.env.HOSTNAME
+  });
+});
+
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});
+EOF
+
+# Dockerfile
+cat > Dockerfile << 'EOF'
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Package files önce (cache için)
+COPY package*.json ./
+
+# Install dependencies (--omit=dev kullan, --production deprecated)
+RUN npm install --omit=dev
+
+# Application code
+COPY server.js .
+
+EXPOSE 3000
+
+CMD ["node", "server.js"]
+EOF
+
+# Build
+docker build -t techflow-node:v1 .
+
+# Run
+docker run -d -p 3000:3000 --name node-api techflow-node:v1
+
+# Test
+curl http://localhost:3000
+
+✅ Kontrol Noktası 3
+# Her iki uygulamayı çalıştır
+docker ps
+
+# Çıktı:
+# flask-app (port 5000)
+# node-api (port 3000)
+
+# Image boyutlarını karşılaştır
+docker images | grep techflow
+
+# Layer history
+docker history techflow-flask:v1
+docker history techflow-node:v1
+
+# Teslimat dosyası
+mkdir -p ~/TechFlow_Docker_Project/03-Images
+cd ~/TechFlow_Docker_Project/03-Images
+
+{
+  echo "=== Custom Images ==="
+  docker images | grep techflow
+  echo ""
+  echo "=== Running Containers ==="
+  docker ps --filter "name=flask-app"
+  docker ps --filter "name=node-api"
+  echo ""
+  echo "=== Flask Test ==="
+  curl -s http://localhost:5000 | head -5
+  echo ""
+  echo "=== Node Test ==="
+  curl -s http://localhost:3000
+} > images_proof.txt
+
+⚠️ Sık Yapılan Hatalar
+Hata                    Sebep                         Çözüm
+no such file or directory COPY yolu yanlış            Dockerfile'ın bulunduğu dizindeki dosyalar
+Build çok yavaş         Cache kullanılmıyor           Requirements/package.json önce COPY et
+Image çok büyük         Base image büyük              alpine veya slim variant kullan
+COPY failed             .dockerignore dosyayı dışladı .dockerignore kontrol et
+Layer sayısı çok        Her RUN ayrı                  RUN komutlarını && ile birleştir
+
+💡 Anlama Testi
+    1. FROM python:3.11 vs python:3.11-slim farkı nedir?
+       Cevap: slim: Minimum bağımlılık, küçük boyut (~150MB). full: Daha fazla araç, büyük boyut (~900MB). Production'da slim tercih edilir.
+    2. Neden requirements.txt'yi app.py'den önce COPY ediyoruz?
+       Cevap: Layer caching! app.py değiştiğinde requirements layer'ı cache'ten gelir, pip install tekrar çalışmaz.
+    3. CMD vs ENTRYPOINT farkı nedir?
+       Cevap: CMD: Override edilebilir. ENTRYPOINT: Container'ın ana process'i, override edilemez (veya --entrypoint ile).
+    4. Multi-stage build'in avantajı nedir?
+       Cevap: Builder stage'de compiler/dev tools kullan, runtime stage'e sadece binary/runtime kopyala. Sonuç: Çok küçük image.
+
+🎯 Modül 3 Tamamlandı!
+Artık:
+    • ✅ Dockerfile yazabiliyorsunuz
+    • ✅ Custom image oluşturabiliyorsunuz
+    • ✅ Best practices uygulayabiliyorsunuz
+    • ✅ Image optimize edebiliyorsunuz
+Sırada: Docker Compose ile multi-container uygulamalar!
+
+
+🎼 Modül 4: Docker Compose - Multi-Container Uygulamalar
+🎓 Ne Öğreneceksiniz
+    • Docker Compose nedir ve neden kullanılır?
+    • docker-compose.yml syntax
+    • Multi-container uygulamaları yönetme
+    • Service'ler arası network ve bağımlılıklar
+    • Volume yönetimi Compose ile
+    • Environment variables ve secrets
+
+📖 Teori (Hızlı Geçiş)
+Docker Compose Nedir? Birden fazla container'ı tek bir YAML dosyası ile tanımlama ve yönetme aracı.
+Neden Gerekli?
+# Docker CLI ile (zahmetli):
+docker network create app-network
+docker volume create db-data
+docker run -d --name db --network app-network -v db-data:/var/lib/mysql mysql
+docker run -d --name backend --network app-network -p 5000:5000 api-image
+docker run -d --name frontend --network app-network -p 80:80 web-image
+
+# Docker Compose ile (kolay):
+docker compose up -d
+Compose Yapısı:
+services:        ← Container'lar
+  web:
+    image: nginx
+    ports:
+      - "80:80"
+
+networks:        ← Network tanımları
+  app-network:
+
+volumes:         ← Volume tanımları
+  db-data:
+⚠️ NOT: version: '3.8' satırı artık gerekli değil ve uyarı veriyor. Kaldırın.
+
+🔧 Uygulama (Adım Adım)
+4.1 Basit Compose: WordPress + MySQL
+Senaryo: WordPress blogu kuruyoruz (2 container: WordPress + MySQL)
+ADIM 1: Proje Dizini
+mkdir -p ~/TechFlow_Docker_Project/04-Compose/wordpress
+cd ~/TechFlow_Docker_Project/04-Compose/wordpress
+
+ADIM 2: docker-compose.yml Oluştur
+cat > docker-compose.yml << 'EOF'
+services:
+  # MySQL Database
+  db:
+    image: mysql:8.0
+    container_name: wordpress-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass123
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wpuser
+      MYSQL_PASSWORD: wppass123
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - wp-network
+
+  # WordPress Application
+  wordpress:
+    image: wordpress:latest
+    container_name: wordpress-app
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: wpuser
+      WORDPRESS_DB_PASSWORD: wppass123
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - wp_data:/var/www/html
+    networks:
+      - wp-network
+    depends_on:
+      - db
+
+volumes:
+  db_data:
+  wp_data:
+
+networks:
+  wp-network:
+    driver: bridge
+EOF
+💡 Dosya Açıklaması:
+services:
+    • db: MySQL container
+        ◦ image: Docker Hub'dan mysql:8.0
+        ◦ restart: always: Container crash olursa otomatik restart
+        ◦ environment: MySQL konfigürasyonu
+        ◦ volumes: Veri kalıcılığı (db_data volume → /var/lib/mysql)
+        ◦ networks: Hangi network'e bağlı
+    • wordpress: WordPress container
+        ◦ ports: Host 8080 → Container 80
+        ◦ depends_on: db servisi başlamadan wordpress başlamaz
+        ◦ WORDPRESS_DB_HOST: db: Service ismi ile DNS çözümlenir!
+volumes: Named volume tanımları (Docker yönetir)
+networks: Custom network (izolasyon)
+
+ADIM 3: Compose ile Başlat
+# Tüm servisleri başlat (detached mode)
+docker compose up -d
+
+# Çıktı:
+# [+] Running 4/4
+#  ✔ Network wordpress_wp-network  Created
+#  ✔ Volume "wordpress_db_data"    Created
+#  ✔ Volume "wordpress_wp_data"    Created
+#  ✔ Container wordpress-db        Started
+#  ✔ Container wordpress-app       Started
+Ne Oldu?
+    1. Network oluşturuldu
+    2. Volume'lar oluşturuldu
+    3. MySQL container başlatıldı
+    4. WordPress container başlatıldı (db'ye bağımlı olduğu için sonra)
+
+ADIM 4: Durum Kontrolü
+# Compose servisleri listele
+docker compose ps
+
+# Çıktı:
+# NAME              IMAGE              STATUS         PORTS
+# wordpress-app     wordpress:latest   Up 2 minutes   0.0.0.0:8080->80/tcp
+# wordpress-db      mysql:8.0          Up 2 minutes   3306/tcp
+
+# Log'ları izle
+docker compose logs -f
+
+# Sadece WordPress logları
+docker compose logs wordpress
+
+# Resource kullanımı
+docker compose top
+
+ADIM 5: Test Et
+# Tarayıcıda: http://localhost:8080
+# WordPress kurulum ekranı görünmeli!
+
+# MySQL'e bağlan (test)
+docker compose exec db mysql -u wpuser -pwppass123 wordpress
+
+# MySQL içinde:
+# SHOW DATABASES;
+# USE wordpress;
+# SHOW TABLES;
+# EXIT;
+
+ADIM 6: Compose Yönetim Komutları
+# Servisleri durdur (container'lar durur ama silinmez)
+docker compose stop
+
+# Tekrar başlat
+docker compose start
+
+# Yeniden başlat
+docker compose restart
+
+# Servisleri durdur ve SİL (volume'lar kalır)
+docker compose down
+
+# Volume'lar dahil her şeyi sil
+docker compose down -v
+
+# Sadece belirli servisi yeniden başlat
+docker compose restart wordpress
+
+# Yeni image build et ve başlat
+docker compose up -d --build
+
+4.2 Full Stack Uygulama: API + Frontend + Database
+Senaryo: 3-tier web uygulaması (Frontend + Node.js API + PostgreSQL)
+ADIM 1: Proje Yapısı
+mkdir -p ~/TechFlow_Docker_Project/04-Compose/fullstack/{frontend,backend}
+cd ~/TechFlow_Docker_Project/04-Compose/fullstack
+
+ADIM 2: Backend API (Node.js)
+cd backend
+
+# package.json
+cat > package.json << 'EOF'
+{
+  "name": "techflow-api",
+  "version": "1.0.0",
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.18.2",
+    "pg": "^8.11.3",
+    "cors": "^2.8.5"
+  }
+}
+EOF
+
+# server.js
+cat > server.js << 'EOF'
+const express = require('express');
+const cors = require('cors');
+const { Pool } = require('pg');
+
+const app = express();
+app.use(cors());
+
+const port = 5000;
+
+// PostgreSQL bağlantısı
+const pool = new Pool({
+  host: process.env.DB_HOST || 'db',
+  port: 5432,
+  user: process.env.DB_USER || 'techflow',
+  password: process.env.DB_PASS || 'techflow123',
+  database: process.env.DB_NAME || 'techflowdb'
+});
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'healthy', timestamp: new Date() });
+});
+
+app.get('/api/users', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM users LIMIT 10');
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.listen(port, () => {
+  console.log(`API running on port ${port}`);
+});
+EOF
+
+# Dockerfile
+cat > Dockerfile << 'EOF'
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install --omit=dev
+COPY server.js .
+EXPOSE 5000
+CMD ["node", "server.js"]
+EOF
+
+cd ..
+
+ADIM 3: Frontend (Basit HTML + Nginx)
+cd frontend
+
+# index.html
+cat > index.html << 'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TechFlow App</title>
+    <style>
+        body { font-family: Arial; max-width: 800px; margin: 50px auto; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+        #result { margin-top: 20px; padding: 20px; background: #f0f0f0; }
+    </style>
+</head>
+<body>
+    <h1>TechFlow Full Stack Application</h1>
+    <button onclick="checkHealth()">Check API Health</button>
+    <button onclick="getUsers()">Get Users</button>
+    <div id="result"></div>
+
+    <script>
+        const API_URL = 'http://localhost:5001';
+
+        async function checkHealth() {
+            try {
+                const res = await fetch(`${API_URL}/api/health`);
+                const data = await res.json();
+                document.getElementById('result').innerHTML =
+                    `<strong>Status:</strong> ${data.status}<br>
+                     <strong>Time:</strong> ${data.timestamp}`;
+            } catch (err) {
+                document.getElementById('result').innerHTML = `<strong>Error:</strong> ${err.message}`;
+            }
+        }
+
+        async function getUsers() {
+            try {
+                const res = await fetch(`${API_URL}/api/users`);
+                const data = await res.json();
+                document.getElementById('result').innerHTML =
+                    `<strong>Users:</strong> ${JSON.stringify(data, null, 2)}`;
+            } catch (err) {
+                document.getElementById('result').innerHTML = `<strong>Error:</strong> ${err.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
+EOF
+
+# Dockerfile
+cat > Dockerfile << 'EOF'
+FROM nginx:alpine
+COPY index.html /usr/share/nginx/html/
+EXPOSE 80
+EOF
+
+cd ..
+
+ADIM 4: Database Init Script
+cat > init.sql << 'EOF'
+-- Create users table
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Insert sample data
+INSERT INTO users (name, email) VALUES
+    ('Alice Johnson', 'alice@techflow.com'),
+    ('Bob Smith', 'bob@techflow.com'),
+    ('Carol White', 'carol@techflow.com'),
+    ('David Brown', 'david@techflow.com'),
+    ('Eve Davis', 'eve@techflow.com');
+EOF
+
+ADIM 5: Docker Compose (Ana Orkestrasyon)
+cat > docker-compose.yml << 'EOF'
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: techflow-db
+    restart: always
+    environment:
+      POSTGRES_USER: techflow
+      POSTGRES_PASSWORD: techflow123
+      POSTGRES_DB: techflowdb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U techflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Node.js API
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: techflow-api
+    restart: always
+    ports:
+      - "5001:5000"
+    environment:
+      DB_HOST: db
+      DB_USER: techflow
+      DB_PASS: techflow123
+      DB_NAME: techflowdb
+      NODE_ENV: production
+    networks:
+      - backend-network
+      - frontend-network
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Frontend (Nginx)
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: techflow-web
+    restart: always
+    ports:
+      - "8081:80"
+    networks:
+      - frontend-network
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+
+networks:
+  backend-network:
+    driver: bridge
+  frontend-network:
+    driver: bridge
+EOF
+💡 Gelişmiş Özellikler:
+    • healthcheck: Container sağlıklı mı kontrol et
+    • depends_on + condition: DB hazır olana kadar API başlamaz
+    • İki ayrı network: Frontend-Backend izolasyonu
+    • build: Image'ı Dockerfile'dan build et
+
+ADIM 6: Tüm Stack'i Başlat
+# Build ve başlat
+docker compose up -d --build
+
+# İlerleme izle
+docker compose logs -f
+
+# Tüm servisler hazır mı?
+docker compose ps
+
+# Health check
+curl http://localhost:5001/api/health
+
+# Frontend
+# Tarayıcı: http://localhost:8081
+⚠️ NOT: Eğer init.sql otomatik çalışmazsa (volume önceden varsa):
+docker compose exec db psql -U techflow -d techflowdb -f /docker-entrypoint-initdb.d/init.sql
+
+✅ Kontrol Noktası 4
+cd ~/TechFlow_Docker_Project/04-Compose/fullstack
+
+# Full stack test
+{
+  echo "=== Docker Compose Stack ==="
+  docker compose ps
+  echo ""
+  echo "=== Networks ==="
+  docker network ls | grep fullstack
+  echo ""
+  echo "=== Volumes ==="
+  docker volume ls | grep fullstack
+  echo ""
+  echo "=== API Health ==="
+  curl -s http://localhost:5001/api/health
+  echo ""
+  echo "=== Database Test ==="
+  docker compose exec db psql -U techflow -d techflowdb -c "SELECT COUNT(*) FROM users;"
+} > compose_proof.txt
+
+cat compose_proof.txt
+
+⚠️ Sık Yapılan Hatalar
+Hata                                    Sebep                      Çözüm
+service "db" didn't complete successfully DB başlamadı              docker compose logs db kontrol et
+Port çakışması                          Port kullanımda            Farklı port: "8082:80"
+API DB'ye bağlanamıyor                  Service ismi yanlış        DB_HOST: db (service name)
+depends_on çalışmıyor                   Healthcheck yok            condition: service_healthy ekle
+Volume izni sorunu                      Permission denied          chmod veya Dockerfile'da USER
+init.sql çalışmadı                      Volume önceden vardı       Volume'u sil: docker compose down -v
+
+💡 Anlama Testi
+    1. depends_on ne işe yarar?
+       Cevap: Servis başlatma sırasını belirler. DB başlamadan API başlamaz. Ama DB "hazır" olduğunu garanti etmez (healthcheck gerekli).
+    2. Service'ler arası network iletişimi nasıl olur?
+       Cevap: Docker Compose her service'e DNS ile erişilebilir isim verir. api service'den db service'e db:5432 ile bağlanabilirsin.
+    3. docker compose down vs docker compose down -v farkı?
+       Cevap: down: Container ve network siler, volume kalır. down -v: Volume'ları da siler (VERİ KAYBI!).
+    4. Named volume vs bind mount farkı?
+       Cevap: Named: Docker yönetir (db_data:/var/lib/mysql). Bind: Host path (./data:/var/lib/mysql). Named production'da önerilir.
+
+🎯 Modül 4 Tamamlandı!
+Artık:
+    • ✅ Multi-container uygulamalar yönetebiliyorsunuz
+    • ✅ docker-compose.yml yazabiliyorsunuz
+    • ✅ Service bağımlılıkları kurabiliyorsunuz
+    • ✅ Full-stack uygulamaları containerize edebiliyorsunuz
+Sırada: Docker Volume ve Storage!
+
+
+💾 Modül 5: Docker Storage - Volume ve Bind Mounts
+🎓 Ne Öğreneceksiniz
+    • Container filesystem yapısı
+    • Volume türleri (named, anonymous, bind mount)
+    • Data persistence stratejileri
+    • Volume backup ve restore
+    • Storage driver'lar
+
+📖 Teori (Hızlı Geçiş)
+Container Storage Katmanları:
+┌─────────────────────────┐
+│ Container Layer (R/W)   │ ← Geçici, silinebilir
+├─────────────────────────┤
+│ Image Layers (R/O)      │ ← Kalıcı, paylaşımlı
+└─────────────────────────┘
+Sorun: Container silindiğinde veriler kaybolur!
+Çözüm: Volumes
+Volume Türleri:
+    1. Named Volume (Docker yönetir)
+docker volume create my-vol
+docker run -v my-vol:/data nginx
+    2. Anonymous Volume (Otomatik oluşur)
+docker run -v /data nginx
+    3. Bind Mount (Host path)
+docker run -v /host/path:/container/path nginx
+Karşılaştırma:
+Özellik         Named Volume    Anonymous    Bind Mount
+Yönetim         Docker          Docker       Manuel
+Backup          Kolay           Zor          Kolay
+Performans      Yüksek          Yüksek       Orta
+Path            Docker seçer    Docker seçer Sen belirlersin
+Production      ✅ Önerilir     ❌ Önerilmez ⚠️ Dikkatli
+
+🔧 Uygulama (Adım Adım)
+5.1 Named Volume Kullanımı
+Senaryo: PostgreSQL database'i kalıcı hale getir
+ADIM 1: Volume Oluştur
+mkdir -p ~/TechFlow_Docker_Project/05-Storage
+cd ~/TechFlow_Docker_Project/05-Storage
+
+# Volume oluştur
+docker volume create postgres-data
+
+# Volume'ları listele
+docker volume ls
+
+# Çıktı:
+# DRIVER    VOLUME NAME
+# local     postgres-data
+
+# Volume detayları
+docker volume inspect postgres-data
+
+# Çıktı:
+# "Mountpoint": "/var/lib/docker/volumes/postgres-data/_data"
+
+ADIM 2: PostgreSQL Container ile Volume Kullan
+# PostgreSQL çalıştır (volume ile)
+docker run -d \
+  --name postgres-persistent \
+  -e POSTGRES_PASSWORD=mypassword \
+  -e POSTGRES_DB=testdb \
+  -v postgres-data:/var/lib/postgresql/data \
+  -p 5432:5432 \
+  postgres:15-alpine
+
+# Birkaç saniye bekle
+sleep 5
+
+# Test: Database oluştur
+docker exec postgres-persistent psql -U postgres -d testdb -c "
+CREATE TABLE users (id SERIAL, name VARCHAR(50));
+INSERT INTO users (name) VALUES ('Alice'), ('Bob');
+SELECT * FROM users;
+"
+
+ADIM 3: Data Persistence Testi
+# Container'ı SİL
+docker rm -f postgres-persistent
+
+# Volume hala var mı?
+docker volume ls | grep postgres-data
+# Çıktı: Evet, volume silinmedi!
+
+# Aynı volume ile yeni container başlat
+docker run -d \
+  --name postgres-new \
+  -e POSTGRES_PASSWORD=mypassword \
+  -e POSTGRES_DB=testdb \
+  -v postgres-data:/var/lib/postgresql/data \
+  -p 5432:5432 \
+  postgres:15-alpine
+
+sleep 3
+
+# Veri hala var mı?
+docker exec postgres-new psql -U postgres -d testdb -c "SELECT * FROM users;"
+
+# Çıktı:
+# id | name
+# ----+-------
+#  1 | Alice
+#  2 | Bob
+✅ BAŞARILI: Veri kaybolmadı!
+
+5.2 Bind Mount Kullanımı
+Senaryo: Web projesi geliştirirken live reload
+ADIM 1: Proje Dizini
+mkdir -p ~/TechFlow_Docker_Project/05-Storage/webapp
+cd ~/TechFlow_Docker_Project/05-Storage/webapp
+
+# HTML dosyası
+cat > index.html << 'EOF'
+<!DOCTYPE html>
+<html>
+<head><title>TechFlow Web</title></head>
+<body>
+    <h1>TechFlow Live Development</h1>
+    <p>Version: 1.0</p>
+</body>
+</html>
+EOF
+
+# Dosya izinlerini ayarla (önemli!)
+chmod 644 index.html
+
+ADIM 2: Bind Mount ile Nginx
+# Nginx çalıştır (bind mount)
+docker run -d \
+  --name dev-web \
+  -p 8082:80 \
+  -v $(pwd):/usr/share/nginx/html:ro \
+  nginx:alpine
+
+# :ro = read-only (güvenlik için)
+
+# Test
+curl http://localhost:8082
+
+ADIM 3: Live Reload Testi
+# Dosyayı düzenle (HOST'ta)
+echo "<p>Updated at $(date)</p>" >> index.html
+
+# Tekrar test (hemen yansır!)
+curl http://localhost:8082
+💡 Ne Oldu? Host'taki dosya değişikliği container içinde anında görüldü! Development'ta çok kullanışlı.
+
+5.3 Volume Backup ve Restore
+Backup:
+cd ~/TechFlow_Docker_Project/05-Storage
+
+# Çalışan container'dan volume backup
+docker run --rm \
+  -v postgres-data:/data \
+  -v $(pwd):/backup \
+  alpine \
+  tar czf /backup/postgres-backup-$(date +%Y%m%d).tar.gz -C /data .
+
+# Backup dosyası oluşturuldu
+ls -lh postgres-backup-*.tar.gz
+Restore:
+# Yeni volume oluştur
+docker volume create postgres-data-restored
+
+# Backup'tan restore et
+docker run --rm \
+  -v postgres-data-restored:/data \
+  -v $(pwd):/backup \
+  alpine \
+  sh -c "tar xzf /backup/postgres-backup-*.tar.gz -C /data"
+
+# Test et
+docker run -d \
+  --name postgres-restored \
+  -v postgres-data-restored:/var/lib/postgresql/data \
+  -e POSTGRES_PASSWORD=mypassword \
+  postgres:15-alpine
+
+# Veri geldi mi?
+docker exec postgres-restored psql -U postgres -c "\l"
+
+✅ Kontrol Noktası 5
+cd ~/TechFlow_Docker_Project/05-Storage
+
+{
+  echo "=== Volumes ==="
+  docker volume ls
+  echo ""
+  echo "=== Volume Details ==="
+  docker volume inspect postgres-data 2>/dev/null || echo "Volume not found"
+  echo ""
+  echo "=== Backup Files ==="
+  ls -lh postgres-backup-*.tar.gz 2>/dev/null || echo "No backups"
+} > storage_proof.txt
+
+cat storage_proof.txt
+
+⚠️ Sık Yapılan Hatalar
+Hata                    Sebep                    Çözüm
+Volume boş              Yanlış path              Container içi path kontrol et
+Permission denied       User/group uyuşmuyor     chmod veya Dockerfile'da USER
+Bind mount Windows'ta yavaş WSL2 disk           Volume kullan veya WSL2 içinde çalış
+Volume silinemiyor      Container kullanıyor     docker rm -f → docker volume rm
+
+💡 Anlama Testi
+    1. Anonymous volume ne zaman kullanılır?
+       Cevap: Dockerfile'da VOLUME /data varsa otomatik oluşur. Genelde kullanma, named volume tercih et.
+    2. Bind mount production'da neden önerilmez?
+       Cevap: Host filesystem'e bağımlı, portable değil, permission sorunları, güvenlik riski.
+    3. Volume driver nedir?
+       Cevap: Volume'u nerede saklayacağını belirler. local (default), nfs, cloud (AWS EBS, Azure Disk) olabilir.
+
+🎯 Modül 5 Tamamlandı!
+Sırada: Modül 6 - Docker Networking!
+
+
+🌐 Modül 6: Docker Networking
+🎓 Ne Öğreneceksiniz
+    • Docker network türleri (bridge, host, overlay)
+    • Container'lar arası iletişim
+    • DNS resolution
+    • Port publishing
+    • Network izolasyonu
+
+📖 Teori (Hızlı Geçiş)
+Network Türleri:
+Tür       Açıklama                  Kullanım
+bridge    Default, izole network    Single host
+host      Host network'ü kullan     Performance kritik
+overlay   Multi-host network        Swarm/Kubernetes
+none      Network yok               Maksimum izolasyon
+Bridge Network Yapısı:
+┌─────────────────────────────────────┐
+│           Host Machine              │
+│  ┌──────────────────────────────┐   │
+│  │   docker0 (bridge)           │   │
+│  │   172.17.0.1                 │   │
+│  │  ┌────────┐     ┌─────────┐  │   │
+│  │  │Container│     │Container│  │   │
+│  │  │172.17.0.2│───│172.17.0.3│  │   │
+│  │  └────────┘     └─────────┘  │   │
+│  └──────────────────────────────┘   │
+│           ↕                          │
+│      eth0 (Public IP)                │
+└─────────────────────────────────────┘
+
+🔧 Uygulama (Adım Adım)
+6.1 Custom Bridge Network
+mkdir -p ~/TechFlow_Docker_Project/06-Networking
+cd ~/TechFlow_Docker_Project/06-Networking
+
+# Custom network oluştur
+docker network create techflow-net
+
+# Network listesi
+docker network ls
+
+# Network detayları
+docker network inspect techflow-net
+
+# İki container aynı network'te
+docker run -d --name web1 --network techflow-net nginx:alpine
+docker run -d --name web2 --network techflow-net nginx:alpine
+
+# web1'den web2'ye ping
+docker exec web1 ping -c 3 web2
+# BAŞARILI! DNS ile çözümlendi
+
+6.2 Multi-Network Container
+# İki network
+docker network create frontend-net
+docker network create backend-net
+
+# API container her iki network'te
+docker run -d --name api \
+  --network frontend-net \
+  nginx:alpine
+
+docker network connect backend-net api
+
+# Container kaç network'te?
+docker inspect api --format '{{range $k,$v := .NetworkSettings.Networks}}{{$k}} {{end}}'
+# Çıktı: backend-net frontend-net
+
+6.3 Network İzolasyonu Testi
+# Farklı network'teki container'lar birbirini göremez
+docker run -d --name isolated --network backend-net alpine sleep 1000
+
+# web1 (techflow-net) -> isolated (backend-net) ping BAŞARISIZ olacak
+docker exec web1 ping -c 1 isolated 2>&1 || echo "Ping failed - Network isolated!"
+
+✅ Kontrol Noktası 6
+cd ~/TechFlow_Docker_Project/06-Networking
+
+{
+  echo "=== Networks ==="
+  docker network ls
+  echo ""
+  echo "=== Network Inspect ==="
+  docker network inspect techflow-net 2>/dev/null | head -30
+  echo ""
+  echo "=== Container Networks ==="
+  docker inspect api --format '{{range $k,$v := .NetworkSettings.Networks}}{{$k}} {{end}}' 2>/dev/null
+} > network_proof.txt
+
+cat network_proof.txt
+
+🎯 Modül 6 Tamamlandı!
+Sırada: Final Projesi ve Troubleshooting!
+
+
+🏆 Modül 7: Final Projesi - TechFlow E-Commerce Platform
+🎯 Proje Hedefi
+Gerçek dünya senaryosu: Mikroservis mimarisinde e-ticaret platformu deploy edin.
+Mimari:
+                    ┌─────────────────┐
+                    │    Frontend     │
+                    │   (Nginx:8090)  │
+                    └────────┬────────┘
+                             │
+                    ┌────────▼────────┐
+                    │   API Gateway   │
+                    │  (Node.js:3001) │
+                    └────────┬────────┘
+                             │
+            ┌────────────────┼────────────────┐
+            │                │                │
+   ┌────────▼────────┐ ┌─────▼──────┐ ┌──────▼───────┐
+   │ Product Service │ │   Redis    │ │Order Service │
+   │ (Flask:5000)    │ │  (Cache)   │ │ (Node:5001)  │
+   └────────┬────────┘ └────────────┘ └──────┬───────┘
+            │                                 │
+            └──────────┬─────────────────────┘
+                       │
+              ┌────────▼────────┐
+              │   PostgreSQL    │
+              │    (orders)     │
+              └─────────────────┘
+Servisler:
+Servis           Teknoloji       Port              Açıklama
+Frontend         Nginx           8090              Web arayüzü
+API Gateway      Node.js         3001              Tüm API isteklerini yönlendirir
+Product Service  Python Flask    5000 (internal)   Ürün yönetimi
+Order Service    Node.js         5001 (internal)   Sipariş yönetimi
+PostgreSQL       PostgreSQL 15   5432 (internal)   Veritabanı
+Redis            Redis 7         6379 (internal)   Cache
+
+🔧 Uygulama
+Proje Yapısı Oluştur
+mkdir -p ~/TechFlow_Docker_Project/07-Final-Project/Dockerfiles/{product-service,order-service,api-gateway,frontend}
+cd ~/TechFlow_Docker_Project/07-Final-Project
+
+Product Service (Python Flask)
+cd Dockerfiles/product-service
+
+cat > app.py << 'EOF'
+from flask import Flask, jsonify
+import os
+import redis
+
+app = Flask(__name__)
+
+# Redis connection
+redis_client = redis.Redis(
+    host=os.getenv('REDIS_HOST', 'redis'),
+    port=6379,
+    decode_responses=True
+)
+
+# Sample products
+PRODUCTS = [
+    {"id": 1, "name": "Laptop", "price": 999.99, "stock": 50},
+    {"id": 2, "name": "Smartphone", "price": 699.99, "stock": 100},
+    {"id": 3, "name": "Headphones", "price": 149.99, "stock": 200},
+    {"id": 4, "name": "Keyboard", "price": 79.99, "stock": 150},
+    {"id": 5, "name": "Mouse", "price": 49.99, "stock": 300},
+]
+
+@app.route('/health')
+def health():
+    return jsonify({"status": "healthy", "service": "product-service"})
+
+@app.route('/api/products')
+def get_products():
+    # Try to get from cache
+    cached = redis_client.get('products')
+    if cached:
+        return jsonify({"source": "cache", "products": eval(cached)})
+
+    # Cache miss - store in Redis
+    redis_client.setex('products', 60, str(PRODUCTS))
+    return jsonify({"source": "database", "products": PRODUCTS})
+
+@app.route('/api/products/<int:product_id>')
+def get_product(product_id):
+    product = next((p for p in PRODUCTS if p['id'] == product_id), None)
+    if product:
+        return jsonify(product)
+    return jsonify({"error": "Product not found"}), 404
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
+EOF
+
+cat > requirements.txt << 'EOF'
+Flask==3.0.0
+redis==5.0.1
+Werkzeug==3.0.1
+EOF
+
+cat > Dockerfile << 'EOF'
+FROM python:3.11-slim
+LABEL maintainer="techflow@example.com"
+LABEL service="product-service"
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY app.py .
+
+EXPOSE 5000
+
+CMD ["python", "app.py"]
+EOF
+
+cd ../..
+
+Order Service (Node.js)
+cd Dockerfiles/order-service
+
+cat > server.js << 'EOF'
+const express = require('express');
+const { Pool } = require('pg');
+
+const app = express();
+app.use(express.json());
+
+const pool = new Pool({
+    host: process.env.DB_HOST || 'db',
+    port: 5432,
+    user: process.env.DB_USER || 'techflow',
+    password: process.env.DB_PASS || 'techflow123',
+    database: process.env.DB_NAME || 'orders'
+});
+
+// Health check
+app.get('/health', (req, res) => {
+    res.json({ status: 'healthy', service: 'order-service' });
+});
+
+// Get all orders
+app.get('/api/orders', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM orders ORDER BY created_at DESC LIMIT 50');
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Create order
+app.post('/api/orders', async (req, res) => {
+    const { customer_name, product_id, quantity } = req.body;
+    try {
+        const result = await pool.query(
+            'INSERT INTO orders (customer_name, product_id, quantity) VALUES ($1, $2, $3) RETURNING *',
+            [customer_name, product_id, quantity]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+const port = process.env.PORT || 5001;
+app.listen(port, () => {
+    console.log(`Order service running on port ${port}`);
+});
+EOF
+
+cat > package.json << 'EOF'
+{
+    "name": "order-service",
+    "version": "1.0.0",
+    "main": "server.js",
+    "dependencies": {
+        "express": "^4.18.2",
+        "pg": "^8.11.3"
+    }
+}
+EOF
+
+cat > Dockerfile << 'EOF'
+FROM node:18-alpine
+LABEL maintainer="techflow@example.com"
+LABEL service="order-service"
+
+WORKDIR /app
+COPY package*.json ./
+RUN npm install --omit=dev
+COPY server.js .
+
+EXPOSE 5001
+
+CMD ["node", "server.js"]
+EOF
+
+cd ../..
+
+API Gateway (Node.js)
+cd Dockerfiles/api-gateway
+
+cat > server.js << 'EOF'
+const express = require('express');
+const cors = require('cors');
+const axios = require('axios');
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+const PRODUCT_SERVICE = process.env.PRODUCT_SERVICE_URL || 'http://product-service:5000';
+const ORDER_SERVICE = process.env.ORDER_SERVICE_URL || 'http://order-service:5001';
+
+// Health check
+app.get('/health', (req, res) => {
+    res.json({ status: 'healthy', service: 'api-gateway' });
+});
+
+// Products proxy
+app.get('/api/products', async (req, res) => {
+    try {
+        const response = await axios.get(`${PRODUCT_SERVICE}/api/products`);
+        res.json(response.data);
+    } catch (err) {
+        res.status(500).json({ error: 'Product service unavailable' });
+    }
+});
+
+app.get('/api/products/:id', async (req, res) => {
+    try {
+        const response = await axios.get(`${PRODUCT_SERVICE}/api/products/${req.params.id}`);
+        res.json(response.data);
+    } catch (err) {
+        res.status(500).json({ error: 'Product service unavailable' });
+    }
+});
+
+// Orders proxy
+app.get('/api/orders', async (req, res) => {
+    try {
+        const response = await axios.get(`${ORDER_SERVICE}/api/orders`);
+        res.json(response.data);
+    } catch (err) {
+        res.status(500).json({ error: 'Order service unavailable' });
+    }
+});
+
+app.post('/api/orders', async (req, res) => {
+    try {
+        const response = await axios.post(`${ORDER_SERVICE}/api/orders`, req.body);
+        res.status(201).json(response.data);
+    } catch (err) {
+        res.status(500).json({ error: 'Order service unavailable' });
+    }
+});
+
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+    console.log(`API Gateway running on port ${port}`);
+});
+EOF
+
+cat > package.json << 'EOF'
+{
+    "name": "api-gateway",
+    "version": "1.0.0",
+    "main": "server.js",
+    "dependencies": {
+        "express": "^4.18.2",
+        "cors": "^2.8.5",
+        "axios": "^1.6.2"
+    }
+}
+EOF
+
+cat > Dockerfile << 'EOF'
+FROM node:18-alpine
+LABEL maintainer="techflow@example.com"
+LABEL service="api-gateway"
+
+WORKDIR /app
+COPY package*.json ./
+RUN npm install --omit=dev
+COPY server.js .
+
+EXPOSE 3000
+
+CMD ["node", "server.js"]
+EOF
+
+cd ../..
+
+Frontend (Nginx)
+cd Dockerfiles/frontend
+
+cat > index.html << 'EOF'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechFlow E-Commerce</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header { background: #2c3e50; color: white; padding: 20px; margin-bottom: 20px; }
+        header h1 { font-size: 24px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .card h3 { color: #2c3e50; margin-bottom: 10px; }
+        .price { color: #27ae60; font-size: 24px; font-weight: bold; }
+        .stock { color: #7f8c8d; font-size: 14px; margin-top: 5px; }
+        button { background: #3498db; color: white; border: none; padding: 10px 20px;
+                 border-radius: 4px; cursor: pointer; margin-top: 10px; }
+        button:hover { background: #2980b9; }
+        .orders { margin-top: 30px; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ecf0f1; }
+        th { background: #34495e; color: white; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>TechFlow E-Commerce Platform</h1>
+        </div>
+    </header>
+
+    <div class="container">
+        <h2>Products</h2>
+        <div id="products" class="grid"></div>
+
+        <div class="orders">
+            <h2>Recent Orders</h2>
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>Customer</th><th>Product</th><th>Qty</th><th>Date</th></tr>
+                </thead>
+                <tbody id="orders"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3001';
+
+        async function loadProducts() {
+            try {
+                const res = await fetch(`${API_URL}/api/products`);
+                const data = await res.json();
+                const products = data.products || data;
+
+                document.getElementById('products').innerHTML = products.map(p => `
+                    <div class="card">
+                        <h3>${p.name}</h3>
+                        <div class="price">$${p.price}</div>
+                        <div class="stock">Stock: ${p.stock}</div>
+                        <button onclick="orderProduct(${p.id}, '${p.name}')">Order</button>
+                    </div>
+                `).join('');
+            } catch (err) {
+                document.getElementById('products').innerHTML = '<p>Failed to load</p>';
+            }
+        }
+
+        async function loadOrders() {
+            try {
+                const res = await fetch(`${API_URL}/api/orders`);
+                const orders = await res.json();
+                document.getElementById('orders').innerHTML = orders.map(o => `
+                    <tr>
+                        <td>${o.id}</td>
+                        <td>${o.customer_name}</td>
+                        <td>${o.product_id}</td>
+                        <td>${o.quantity}</td>
+                        <td>${new Date(o.created_at).toLocaleString()}</td>
+                    </tr>
+                `).join('') || '<tr><td colspan="5">No orders</td></tr>';
+            } catch {
+                document.getElementById('orders').innerHTML = '<tr><td colspan="5">Failed</td></tr>';
+            }
+        }
+
+        async function orderProduct(productId, productName) {
+            const customer = prompt('Your name:');
+            if (!customer) return;
+            const quantity = parseInt(prompt('Quantity:', '1'));
+            if (!quantity) return;
+
+            try {
+                await fetch(`${API_URL}/api/orders`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ customer_name: customer, product_id: productId, quantity })
+                });
+                alert('Order placed!');
+                loadOrders();
+            } catch {
+                alert('Order failed');
+            }
+        }
+
+        loadProducts();
+        loadOrders();
+    </script>
+</body>
+</html>
+EOF
+
+cat > Dockerfile << 'EOF'
+FROM nginx:alpine
+LABEL maintainer="techflow@example.com"
+LABEL service="frontend"
+
+COPY index.html /usr/share/nginx/html/
+EXPOSE 80
+EOF
+
+cd ../..
+
+Database Init Script
+cat > init.sql << 'EOF'
+-- Orders table
+CREATE TABLE IF NOT EXISTS orders (
+    id SERIAL PRIMARY KEY,
+    customer_name VARCHAR(100) NOT NULL,
+    product_id INTEGER NOT NULL,
+    quantity INTEGER NOT NULL DEFAULT 1,
+    status VARCHAR(50) DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Sample orders
+INSERT INTO orders (customer_name, product_id, quantity, status) VALUES
+    ('John Doe', 1, 2, 'completed'),
+    ('Jane Smith', 2, 1, 'shipped'),
+    ('Bob Wilson', 3, 3, 'pending');
+EOF
+
+Docker Compose
+cat > docker-compose.yml << 'EOF'
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: ecommerce-db
+    restart: always
+    environment:
+      POSTGRES_USER: techflow
+      POSTGRES_PASSWORD: techflow123
+      POSTGRES_DB: orders
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U techflow -d orders"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: ecommerce-redis
+    restart: always
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Product Service (Python Flask)
+  product-service:
+    build:
+      context: ./Dockerfiles/product-service
+      dockerfile: Dockerfile
+    container_name: ecommerce-products
+    restart: always
+    environment:
+      REDIS_HOST: redis
+    networks:
+      - backend-network
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # Order Service (Node.js)
+  order-service:
+    build:
+      context: ./Dockerfiles/order-service
+      dockerfile: Dockerfile
+    container_name: ecommerce-orders
+    restart: always
+    environment:
+      DB_HOST: db
+      DB_USER: techflow
+      DB_PASS: techflow123
+      DB_NAME: orders
+      PORT: 5001
+    networks:
+      - backend-network
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # API Gateway (Node.js)
+  api-gateway:
+    build:
+      context: ./Dockerfiles/api-gateway
+      dockerfile: Dockerfile
+    container_name: ecommerce-gateway
+    restart: always
+    ports:
+      - "3001:3000"
+    environment:
+      PRODUCT_SERVICE_URL: http://product-service:5000
+      ORDER_SERVICE_URL: http://order-service:5001
+    networks:
+      - backend-network
+      - frontend-network
+    depends_on:
+      - product-service
+      - order-service
+
+  # Frontend (Nginx)
+  frontend:
+    build:
+      context: ./Dockerfiles/frontend
+      dockerfile: Dockerfile
+    container_name: ecommerce-frontend
+    restart: always
+    ports:
+      - "8090:80"
+    networks:
+      - frontend-network
+    depends_on:
+      - api-gateway
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  backend-network:
+    driver: bridge
+  frontend-network:
+    driver: bridge
+EOF
+
+Projeyi Başlat
+# Build ve başlat
+docker compose up -d --build
+
+# Durum kontrol
+docker compose ps
+
+# Loglar
+docker compose logs -f
+
+# Eğer init.sql otomatik çalışmadıysa:
+docker compose exec db psql -U techflow -d orders -f /docker-entrypoint-initdb.d/init.sql
+
+Test
+# API Gateway
+curl http://localhost:3001/health
+
+# Products
+curl http://localhost:3001/api/products
+
+# Orders
+curl http://localhost:3001/api/orders
+
+# Yeni sipariş
+curl -X POST http://localhost:3001/api/orders \
+  -H "Content-Type: application/json" \
+  -d '{"customer_name":"Test User","product_id":1,"quantity":2}'
+
+# Frontend: http://localhost:8090
+
+✅ Kontrol Noktası 7 (Final)
+cd ~/TechFlow_Docker_Project/07-Final-Project
+
+{
+  echo "=== TechFlow E-Commerce Platform ==="
+  echo "Date: $(date)"
+  echo ""
+  echo "=== Services ==="
+  docker compose ps
+  echo ""
+  echo "=== API Health ==="
+  curl -s http://localhost:3001/health
+  echo ""
+  echo "=== Products ==="
+  curl -s http://localhost:3001/api/products | head -100
+  echo ""
+  echo "=== Orders ==="
+  curl -s http://localhost:3001/api/orders
+} > deployment_proof.txt
+
+cat deployment_proof.txt
+
+
+📦 Teslimat Yapısı
+TechFlow_Docker_Project/
+├── 01-Installation/
+│   └── docker_install_proof.txt
+├── 02-Commands/
+│   └── commands_proof.txt
+├── 03-Images/
+│   ├── flask-app/
+│   ├── node-app/
+│   └── images_proof.txt
+├── 04-Compose/
+│   ├── wordpress/
+│   ├── fullstack/
+│   └── compose_proof.txt
+├── 05-Storage/
+│   └── storage_proof.txt
+├── 06-Networking/
+│   └── network_proof.txt
+├── 07-Final-Project/
+│   ├── docker-compose.yml
+│   ├── Dockerfiles/
+│   ├── init.sql
+│   ├── README.md
+│   └── deployment_proof.txt
+└── README.md (Final Rapor)
+
+
+🧹 Temizlik
+# Tüm projeleri durdur
+cd ~/TechFlow_Docker_Project/07-Final-Project && docker compose down -v
+cd ~/TechFlow_Docker_Project/04-Compose/fullstack && docker compose down -v
+cd ~/TechFlow_Docker_Project/04-Compose/wordpress && docker compose down -v
+
+# Tek tek container'ları durdur
+docker stop flask-app node-api dev-web postgres-new 2>/dev/null
+docker rm flask-app node-api dev-web postgres-new 2>/dev/null
+
+# Network temizliği
+docker network prune -f
+
+# Volume temizliği (DİKKAT: Veri kaybı!)
+docker volume prune -f
+
+# Image temizliği
+docker image prune -a -f
+
+
+🎓 Başarı Kriterleri
+    • ✅ Tüm modüller tamamlandı
+    • ✅ Container'lar çalışıyor
+    • ✅ Volume'larla veri kalıcı
+    • ✅ Network izolasyonu doğru
+    • ✅ Dokümantasyon eksiksiz
+    • ✅ Troubleshooting yapabilme
+
+
+Tebrikler! Docker Bootcamp'i tamamladınız! 🎉

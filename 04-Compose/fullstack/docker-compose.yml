@@ -1,0 +1,65 @@
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: techflow-db
+    restart: always
+    environment:
+      POSTGRES_USER: techflow
+      POSTGRES_PASSWORD: techflow123
+      POSTGRES_DB: techflowdb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U techflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Node.js API
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: techflow-api
+    restart: always
+    ports:
+      - "5001:5000"
+    environment:
+      DB_HOST: db
+      DB_USER: techflow
+      DB_PASS: techflow123
+      DB_NAME: techflowdb
+      NODE_ENV: production
+    networks:
+      - backend-network
+      - frontend-network
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Frontend (Nginx)
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: techflow-web
+    restart: always
+    ports:
+      - "8081:80"
+    networks:
+      - frontend-network
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+
+networks:
+  backend-network:
+    driver: bridge
+  frontend-network:
+    driver: bridge

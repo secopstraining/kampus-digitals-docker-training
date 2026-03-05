@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechFlow E-Commerce</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header { background: #2c3e50; color: white; padding: 20px; margin-bottom: 20px; }
+        header h1 { font-size: 24px; }
+        .status { display: flex; gap: 10px; margin-top: 10px; }
+        .status-item { padding: 5px 10px; border-radius: 4px; font-size: 12px; }
+        .status-healthy { background: #27ae60; }
+        .status-unhealthy { background: #e74c3c; }
+        .status-checking { background: #f39c12; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .card h3 { color: #2c3e50; margin-bottom: 10px; }
+        .price { color: #27ae60; font-size: 24px; font-weight: bold; }
+        .stock { color: #7f8c8d; font-size: 14px; margin-top: 5px; }
+        button { background: #3498db; color: white; border: none; padding: 10px 20px;
+                 border-radius: 4px; cursor: pointer; margin-top: 10px; }
+        button:hover { background: #2980b9; }
+        .orders { margin-top: 30px; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ecf0f1; }
+        th { background: #34495e; color: white; }
+        #message { padding: 10px; margin: 10px 0; border-radius: 4px; display: none; }
+        .success { background: #d5f4e6; color: #27ae60; }
+        .error { background: #fadbd8; color: #e74c3c; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>TechFlow E-Commerce Platform</h1>
+            <div class="status">
+                <span id="gateway-status" class="status-item status-checking">Gateway: Checking...</span>
+                <span id="products-status" class="status-item status-checking">Products: Checking...</span>
+                <span id="orders-status" class="status-item status-checking">Orders: Checking...</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="message"></div>
+
+        <h2>Products</h2>
+        <div id="products" class="grid"></div>
+
+        <div class="orders">
+            <h2>Recent Orders</h2>
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>Customer</th><th>Product ID</th><th>Quantity</th><th>Date</th></tr>
+                </thead>
+                <tbody id="orders"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3001';
+
+        async function checkHealth() {
+            try {
+                const res = await fetch(`${API_URL}/health`);
+                updateStatus('gateway-status', res.ok);
+            } catch { updateStatus('gateway-status', false); }
+
+            try {
+                const res = await fetch(`${API_URL}/api/products`);
+                updateStatus('products-status', res.ok);
+            } catch { updateStatus('products-status', false); }
+
+            try {
+                const res = await fetch(`${API_URL}/api/orders`);
+                updateStatus('orders-status', res.ok);
+            } catch { updateStatus('orders-status', false); }
+        }
+
+        function updateStatus(id, healthy) {
+            const el = document.getElementById(id);
+            el.className = `status-item ${healthy ? 'status-healthy' : 'status-unhealthy'}`;
+            el.textContent = el.textContent.split(':')[0] + ': ' + (healthy ? 'Healthy' : 'Down');
+        }
+
+        async function loadProducts() {
+            try {
+                const res = await fetch(`${API_URL}/api/products`);
+                const data = await res.json();
+                const products = data.products || data;
+
+                document.getElementById('products').innerHTML = products.map(p => `
+                    <div class="card">
+                        <h3>${p.name}</h3>
+                        <div class="price">$${p.price}</div>
+                        <div class="stock">Stock: ${p.stock}</div>
+                        <button onclick="orderProduct(${p.id}, '${p.name}')">Order Now</button>
+                    </div>
+                `).join('');
+            } catch (err) {
+                document.getElementById('products').innerHTML = '<p>Failed to load products</p>';
+            }
+        }
+
+        async function loadOrders() {
+            try {
+                const res = await fetch(`${API_URL}/api/orders`);
+                const orders = await res.json();
+
+                document.getElementById('orders').innerHTML = orders.map(o => `
+                    <tr>
+                        <td>${o.id}</td>
+                        <td>${o.customer_name}</td>
+                        <td>${o.product_id}</td>
+                        <td>${o.quantity}</td>
+                        <td>${new Date(o.created_at).toLocaleString()}</td>
+                    </tr>
+                `).join('') || '<tr><td colspan="5">No orders yet</td></tr>';
+            } catch {
+                document.getElementById('orders').innerHTML = '<tr><td colspan="5">Failed to load orders</td></tr>';
+            }
+        }
+
+        async function orderProduct(productId, productName) {
+            const customer = prompt('Enter your name:');
+            if (!customer) return;
+
+            const quantity = parseInt(prompt('Quantity:', '1'));
+            if (!quantity || quantity < 1) return;
+
+            try {
+                const res = await fetch(`${API_URL}/api/orders`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ customer_name: customer, product_id: productId, quantity })
+                });
+
+                if (res.ok) {
+                    showMessage(`Order placed for ${quantity}x ${productName}!`, 'success');
+                    loadOrders();
+                } else {
+                    showMessage('Failed to place order', 'error');
+                }
+            } catch {
+                showMessage('Order service unavailable', 'error');
+            }
+        }
+
+        function showMessage(text, type) {
+            const el = document.getElementById('message');
+            el.textContent = text;
+            el.className = type;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 3000);
+        }
+
+        // Initialize
+        checkHealth();
+        loadProducts();
+        loadOrders();
+        setInterval(checkHealth, 30000);
+    </script>
+</body>
+</html>

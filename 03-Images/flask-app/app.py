@@ -1,0 +1,16 @@
+from flask import Flask
+import os
+
+app = Flask(__name__)
+
+@app.route('/')
+def hello():
+    return f"""
+    <h1>TechFlow Flask App</h1>
+    <p>Container ID: {os.uname().nodename}</p>
+    <p>Python Version: {os.sys.version}</p>
+    <p>Environment: {os.getenv('ENV', 'production')}</p>
+    """
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)

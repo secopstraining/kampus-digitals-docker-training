@@ -1,0 +1,113 @@
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: ecommerce-db
+    restart: always
+    environment:
+      POSTGRES_USER: techflow
+      POSTGRES_PASSWORD: techflow123
+      POSTGRES_DB: orders
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U techflow -d orders"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: ecommerce-redis
+    restart: always
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Product Service (Python Flask)
+  product-service:
+    build:
+      context: ./Dockerfiles/product-service
+      dockerfile: Dockerfile
+    container_name: ecommerce-products
+    restart: always
+    environment:
+      REDIS_HOST: redis
+    networks:
+      - backend-network
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # Order Service (Node.js)
+  order-service:
+    build:
+      context: ./Dockerfiles/order-service
+      dockerfile: Dockerfile
+    container_name: ecommerce-orders
+    restart: always
+    environment:
+      DB_HOST: db
+      DB_USER: techflow
+      DB_PASS: techflow123
+      DB_NAME: orders
+      PORT: 5001
+    networks:
+      - backend-network
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # API Gateway (Node.js)
+  api-gateway:
+    build:
+      context: ./Dockerfiles/api-gateway
+      dockerfile: Dockerfile
+    container_name: ecommerce-gateway
+    restart: always
+    ports:
+      - "3001:3000"
+    environment:
+      PRODUCT_SERVICE_URL: http://product-service:5000
+      ORDER_SERVICE_URL: http://order-service:5001
+    networks:
+      - backend-network
+      - frontend-network
+    depends_on:
+      - product-service
+      - order-service
+
+  # Frontend (Nginx)
+  frontend:
+    build:
+      context: ./Dockerfiles/frontend
+      dockerfile: Dockerfile
+    container_name: ecommerce-frontend
+    restart: always
+    ports:
+      - "8090:80"
+    networks:
+      - frontend-network
+    depends_on:
+      - api-gateway
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  backend-network:
+    driver: bridge
+  frontend-network:
+    driver: bridge
