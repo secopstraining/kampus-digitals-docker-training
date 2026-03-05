@@ -1,5 +1,6 @@
 from flask import Flask, jsonify
 import os
+import json
 import redis
 
 app = Flask(__name__)
@@ -29,10 +30,10 @@ def get_products():
     # Try to get from cache
     cached = redis_client.get('products')
     if cached:
-        return jsonify({"source": "cache", "products": eval(cached)})
+        return jsonify({"source": "cache", "products": json.loads(cached)})
 
     # Cache miss - store in Redis
-    redis_client.setex('products', 60, str(PRODUCTS))
+    redis_client.setex('products', 60, json.dumps(PRODUCTS))
     return jsonify({"source": "database", "products": PRODUCTS})
 
 @app.route('/api/products/<int:product_id>')

@@ -1,4 +1,4 @@
-# TechFlow E-Commerce Platform
+# Kampus Digitals E-Commerce Platform
 
 Mikroservis mimarisinde e-ticaret platformu.
 
@@ -7,12 +7,12 @@ Mikroservis mimarisinde e-ticaret platformu.
 ```
                     ┌─────────────────┐
                     │    Frontend     │
-                    │   (Nginx:8090)  │
+                    │  (Nginx:40090)  │
                     └────────┬────────┘
                              │
                     ┌────────▼────────┐
                     │   API Gateway   │
-                    │  (Node.js:3001) │
+                    │ (Node.js:40001) │
                     └────────┬────────┘
                              │
             ┌────────────────┼────────────────┐
@@ -32,14 +32,16 @@ Mikroservis mimarisinde e-ticaret platformu.
 
 ## Servisler
 
-| Servis | Teknoloji | Port | Aciklama |
-|--------|-----------|------|----------|
-| Frontend | Nginx | 8090 | Web arayuzu |
-| API Gateway | Node.js | 3001 | Tum API isteklerini yonlendirir |
-| Product Service | Python Flask | 5000 | Urun yonetimi |
-| Order Service | Node.js | 5001 | Siparis yonetimi |
-| PostgreSQL | PostgreSQL 15 | 5432 | Veritabani |
-| Redis | Redis 7 | 6379 | Cache |
+| Servis | Teknoloji | Port | Erisim | Aciklama |
+|--------|-----------|------|--------|----------|
+| Frontend | Nginx | 40090 | External (host:40090) | Web arayuzu |
+| API Gateway | Node.js | 40001 | External (host:40001) | Tum API isteklerini yonlendirir |
+| Product Service | Python Flask | 5000 | Internal | Urun yonetimi |
+| Order Service | Node.js | 5001 | Internal | Siparis yonetimi |
+| PostgreSQL | PostgreSQL 15 | 5432 | Internal | Veritabani |
+| Redis | Redis 7 | 6379 | Internal | Cache |
+
+> **Not:** "Internal" servisler sadece Docker network icinden erisilebilir, host'tan dogrudan erisilemez. "External" servisler `ports` ile host'a publish edilmistir.
 
 ## Kullanim
 
@@ -68,31 +70,31 @@ docker compose logs product-service
 
 ### Gateway Health
 ```bash
-curl http://localhost:3001/health
+curl http://localhost:40001/health
 ```
 
 ### Products
 ```bash
 # Tum urunler
-curl http://localhost:3001/api/products
+curl http://localhost:40001/api/products
 
 # Tek urun
-curl http://localhost:3001/api/products/1
+curl http://localhost:40001/api/products/1
 ```
 
 ### Orders
 ```bash
 # Tum siparisler
-curl http://localhost:3001/api/orders
+curl http://localhost:40001/api/orders
 
 # Yeni siparis
-curl -X POST http://localhost:3001/api/orders \
+curl -X POST http://localhost:40001/api/orders \
   -H "Content-Type: application/json" \
   -d '{"customer_name":"Test User","product_id":1,"quantity":2}'
 ```
 
 ## Frontend
-Tarayicide: http://localhost:8090
+Tarayicide: http://localhost:40090
 
 ## Network Izolasyonu
 

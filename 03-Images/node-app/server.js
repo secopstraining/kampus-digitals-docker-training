@@ -4,7 +4,7 @@ const port = 3000;
 
 app.get('/', (req, res) => {
   res.json({
-    message: 'TechFlow Node.js API',
+    message: 'Kampus Digitals Node.js API',
     version: '1.0.0',
     container: process.env.HOSTNAME
   });

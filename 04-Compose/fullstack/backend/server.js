@@ -11,9 +11,9 @@ app.use(cors());
 const pool = new Pool({
   host: process.env.DB_HOST || 'db',
   port: 5432,
-  user: process.env.DB_USER || 'techflow',
-  password: process.env.DB_PASS || 'techflow123',
-  database: process.env.DB_NAME || 'techflowdb'
+  user: process.env.DB_USER || 'kampus',
+  password: process.env.DB_PASS || 'kampus123',
+  database: process.env.DB_NAME || 'kampusdb'
 });
 
 app.get('/api/health', (req, res) => {

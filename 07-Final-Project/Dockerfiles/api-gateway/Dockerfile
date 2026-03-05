@@ -1,12 +1,15 @@
 FROM node:18-alpine
-LABEL maintainer="techflow@example.com"
+LABEL maintainer="kampus@example.com"
 LABEL service="api-gateway"
+
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 WORKDIR /app
 COPY package*.json ./
-RUN npm install --production
+RUN npm install --omit=dev
 COPY server.js .
 
+USER appuser
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1

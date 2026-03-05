@@ -1,5 +1,5 @@
 {
-  "name": "techflow-node",
+  "name": "kampus-node",
   "version": "1.0.0",
   "main": "server.js",
   "dependencies": {

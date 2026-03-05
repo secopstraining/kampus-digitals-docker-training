@@ -2,19 +2,19 @@ services:
   # PostgreSQL Database
   db:
     image: postgres:15-alpine
-    container_name: techflow-db
+    container_name: kampus-db
     restart: always
     environment:
-      POSTGRES_USER: techflow
-      POSTGRES_PASSWORD: techflow123
-      POSTGRES_DB: techflowdb
+      POSTGRES_USER: kampus
+      POSTGRES_PASSWORD: kampus123
+      POSTGRES_DB: kampusdb
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - backend-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U techflow"]
+      test: ["CMD-SHELL", "pg_isready -U kampus"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -24,15 +24,15 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: techflow-api
+    container_name: kampus-api
     restart: always
     ports:
-      - "5001:5000"
+      - "40501:5000"
     environment:
       DB_HOST: db
-      DB_USER: techflow
-      DB_PASS: techflow123
-      DB_NAME: techflowdb
+      DB_USER: kampus
+      DB_PASS: kampus123
+      DB_NAME: kampusdb
       NODE_ENV: production
     networks:
       - backend-network
@@ -46,10 +46,10 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: techflow-web
+    container_name: kampus-web
     restart: always
     ports:
-      - "8081:80"
+      - "40081:80"
     networks:
       - frontend-network
     depends_on:

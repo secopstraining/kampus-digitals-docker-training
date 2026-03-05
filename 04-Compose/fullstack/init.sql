@@ -8,8 +8,8 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- Insert sample data
 INSERT INTO users (name, email) VALUES
-    ('Alice Johnson', 'alice@techflow.com'),
-    ('Bob Smith', 'bob@techflow.com'),
-    ('Carol White', 'carol@techflow.com'),
-    ('David Brown', 'david@techflow.com'),
-    ('Eve Davis', 'eve@techflow.com');
+    ('Alice Johnson', 'alice@kampusdigitals.com'),
+    ('Bob Smith', 'bob@kampusdigitals.com'),
+    ('Carol White', 'carol@kampusdigitals.com'),
+    ('David Brown', 'david@kampusdigitals.com'),
+    ('Eve Davis', 'eve@kampusdigitals.com');

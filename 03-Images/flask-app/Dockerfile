@@ -2,9 +2,9 @@
 FROM python:3.11-slim
 
 # Metadata (iyi pratik)
-LABEL maintainer="techflow@example.com"
+LABEL maintainer="kampus@example.com"
 LABEL version="1.0"
-LABEL description="TechFlow Flask Web Application"
+LABEL description="Kampus Digitals Flask Web Application"
 
 # Calisma dizini olustur
 WORKDIR /app

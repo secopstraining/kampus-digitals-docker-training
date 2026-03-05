@@ -1,11 +1,17 @@
-# TechFlow Docker Bootcamp - Bitirme Projesi
+# Kampus Digitals Docker Bootcamp - Bitirme Projesi
 
 Docker Bootcamp kapsaminda tamamlanan tum moduller.
+
+## Video Egitimler
+
+Tum modullerin uygulama videolarina YouTube playlist uzerinden ulasabilirsiniz:
+
+[Kampus Digitals Docker Bootcamp - YouTube Playlist](https://www.youtube.com/watch?v=fV6UCxSjxUE&list=PL9VRN2-Oku1lvLCq3mzUzaj88-CcVTNlX)
 
 ## Proje Yapisi
 
 ```
-TechFlow_Docker_Project/
+Kampus_Docker_Project/
 ├── 01-Installation/          # Modul 1: Docker Kurulumu
 ├── 02-Commands/              # Modul 2: Temel Docker Komutlari
 ├── 03-Images/                # Modul 3: Docker Image Olusturma
@@ -77,37 +83,37 @@ TechFlow_Docker_Project/
 ### Modul 3 - Flask App
 ```bash
 cd 03-Images/flask-app
-docker build -t techflow-flask:v1 .
-docker run -d -p 5000:5000 --name flask-app techflow-flask:v1
-curl http://localhost:5000
+docker build -t kampus-flask:v1 .
+docker run -d -p 40500:5000 --name flask-app kampus-flask:v1
+curl http://localhost:40500
 ```
 
 ### Modul 4 - Full Stack
 ```bash
 cd 04-Compose/fullstack
 docker compose up -d --build
-curl http://localhost:5001/api/health
+curl http://localhost:40501/api/health
 ```
 
 ### Modul 7 - E-Commerce Platform
 ```bash
 cd 07-Final-Project
 docker compose up -d --build
-# Frontend: http://localhost:8090
-# API: http://localhost:3001
+# Frontend: http://localhost:40090
+# API: http://localhost:40001
 ```
 
 ## Portlar
 
 | Servis | Port |
 |--------|------|
-| Flask App | 5000 |
-| Node API | 3000 |
-| WordPress | 8080 |
-| Full Stack API | 5001 |
-| Full Stack Frontend | 8081 |
-| E-Commerce Frontend | 8090 |
-| E-Commerce API Gateway | 3001 |
+| Flask App | 40500 |
+| Node API | 40300 |
+| WordPress | 40080 |
+| Full Stack API | 40501 |
+| Full Stack Frontend | 40081 |
+| E-Commerce Frontend | 40090 |
+| E-Commerce API Gateway | 40001 |
 
 ## Temizlik
 

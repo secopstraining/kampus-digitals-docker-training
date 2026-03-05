@@ -5,8 +5,8 @@ services:
     container_name: ecommerce-db
     restart: always
     environment:
-      POSTGRES_USER: techflow
-      POSTGRES_PASSWORD: techflow123
+      POSTGRES_USER: kampus
+      POSTGRES_PASSWORD: kampus123
       POSTGRES_DB: orders
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -14,7 +14,7 @@ services:
     networks:
       - backend-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U techflow -d orders"]
+      test: ["CMD-SHELL", "pg_isready -U kampus -d orders"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -59,8 +59,8 @@ services:
     restart: always
     environment:
       DB_HOST: db
-      DB_USER: techflow
-      DB_PASS: techflow123
+      DB_USER: kampus
+      DB_PASS: kampus123
       DB_NAME: orders
       PORT: 5001
     networks:
@@ -77,7 +77,7 @@ services:
     container_name: ecommerce-gateway
     restart: always
     ports:
-      - "3001:3000"
+      - "40001:3000"
     environment:
       PRODUCT_SERVICE_URL: http://product-service:5000
       ORDER_SERVICE_URL: http://order-service:5001
@@ -96,7 +96,7 @@ services:
     container_name: ecommerce-frontend
     restart: always
     ports:
-      - "8090:80"
+      - "40090:80"
     networks:
       - frontend-network
     depends_on:

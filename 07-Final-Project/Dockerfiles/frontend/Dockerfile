@@ -1,5 +1,5 @@
 FROM nginx:alpine
-LABEL maintainer="techflow@example.com"
+LABEL maintainer="kampus@example.com"
 LABEL service="frontend"
 
 COPY index.html /usr/share/nginx/html/
