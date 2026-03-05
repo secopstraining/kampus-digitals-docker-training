@@ -8,6 +8,25 @@ Tum modullerin uygulama videolarina YouTube playlist uzerinden ulasabilirsiniz:
 
 [Kampus Digitals Docker Bootcamp - YouTube Playlist](https://www.youtube.com/watch?v=fV6UCxSjxUE&list=PL9VRN2-Oku1lvLCq3mzUzaj88-CcVTNlX)
 
+## Egitim Dokumantasyonu
+
+Egitimin adim adim takip edilecegi dokumanlara `docs/` dizininden ulasabilirsiniz. Her modul, teori, uygulama ve kontrol noktasi icermektedir:
+
+| Modul | Konu | Dokuman |
+|-------|------|---------|
+| Giris | Proje hikayesi, gereksinimler ve modul yapisi | [docs/00-giris.md](docs/00-giris.md) |
+| Modul 1 | Docker Kurulumu ve Temel Yapi | [docs/01-kurulum.md](docs/01-kurulum.md) |
+| Modul 2 | Temel Docker Komutlari | [docs/02-temel-komutlar.md](docs/02-temel-komutlar.md) |
+| Modul 3 | Docker Image Olusturma ve Dockerfile | [docs/03-dockerfile.md](docs/03-dockerfile.md) |
+| Modul 4 | Docker Compose - Multi-Container Uygulamalar | [docs/04-compose.md](docs/04-compose.md) |
+| Modul 5 | Docker Storage - Volume ve Bind Mounts | [docs/05-storage.md](docs/05-storage.md) |
+| Modul 6 | Docker Networking | [docs/06-networking.md](docs/06-networking.md) |
+| Modul 7 | Final Projesi - Kampus Digitals E-Commerce Platform | [docs/07-final-proje.md](docs/07-final-proje.md) |
+| Ek Konular | Environment Variables, Registry, WSL2 Rehberi | [docs/08-ek-konular.md](docs/08-ek-konular.md) |
+| Temizlik | Temizlik ve Basari Kriterleri | [docs/09-temizlik.md](docs/09-temizlik.md) |
+
+> **Baslangic:** [docs/00-giris.md](docs/00-giris.md) dosyasindan baslayin ve modulleri sirayla takip edin.
+
 ## Proje Yapisi
 
 ```
