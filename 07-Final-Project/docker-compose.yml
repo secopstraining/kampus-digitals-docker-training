@@ -49,6 +49,11 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Order Service (Node.js)
   order-service:
@@ -68,6 +73,11 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5001/health', r => r.statusCode === 200 ? process.exit(0) : process.exit(1)).on('error', () => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # API Gateway (Node.js)
   api-gateway:
@@ -85,8 +95,10 @@ services:
       - backend-network
       - frontend-network
     depends_on:
-      - product-service
-      - order-service
+      product-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
 
   # Frontend (Nginx)
   frontend:
